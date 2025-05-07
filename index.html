@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數字挑戰遊戲</title>
+  <title>數字成雙成對遊戲配對</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -24,7 +24,10 @@
       margin-bottom: 10px;
       font-size: 18px;
       color: #33691e;
-    }
+      background: #ffffffaa;
+      padding: 10px 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);}
     #grid {
       display: grid;
       gap: 10px;
@@ -80,18 +83,19 @@
       font-size: 14px;
       margin-top: 20px;
       background: #ffffffcc;
-      padding: 10px;
-      border-radius: 8px;
+      padding: 16px;
+      border-radius: 10px;
       border: 1px solid #c5e1a5;
-    }
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);}
     .rules strong {
       color: #33691e;
     }
     @media screen and (max-width: 480px) {
       .cell {
-        width: 60px;
-        height: 60px;
+        width: 64px;
+        height: 64px;
         font-size: 20px;
+        padding: 4px;
       }
       button {
         padding: 8px 14px;
@@ -99,210 +103,195 @@
       }
     }
   </style>
-<link rel="preconnect" href="https://www.youtube.com">
 </head>
 <body>
-  <audio id="bgmAudio" src="https://cdn.pixabay.com/download/audio/2023/04/06/audio_c8964d1b98.mp3?filename=calm-nature-background-ambience-146406.mp3" autoplay loop muted></audio></audio></audio>
-  
-  <h1 id="title">數字挑戰遊戲</h1>
-  <div class="info">
-    <span id="score">得分：0</span>
-    <span id="timer">時間：30</span>
-  </div>
-  <div id="grid"></div>
-  <button onclick="startGame('easy')">簡單模式 (2x2，加總為10)</button>
-  <button onclick="startGame('hard')">困難模式 (3x3，加總為15)</button>
 
-  <div class="record">
-    <p><strong>簡單模式最佳紀錄：</strong><span id="easyHighScores"></span></p>
-    <p><strong>困難模式最佳紀錄：</strong><span id="hardHighScores"></span></p>
-    <p><strong>近期遊戲紀錄：</strong><span id="recentScores"></span></p>
+<h1 id="title">數字成雙成對遊戲配對</h1>
+<div class="info">
+  <div style="width: 300px; height: 20px; background: #c8e6c9; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
+    <div id="progressBar" style="height: 100%; width: 100%; background: #388e3c;"></div>
   </div>
+  <span id="score">得分：0</span>
+  <span id="timer">時間：30</span>
+</div>
+<div id="grid"></div>
+<button id="easyBtn">簡單模式 (2x2，加總為10)</button>
+<button id="hardBtn">困難模式 (3x3，加總為15)</button>
 
-  <div style="margin-top: 10px;">
-  <button onclick="toggleAudio()" id="audioToggle">🔇 關閉音效</button>
-  <button onclick="toggleBGM()" id="bgmToggle">🎵 關閉背景音樂</button>
+<div>
+  <button id="restartBtn" onclick="startGame(mode)" style="display:none; margin: 10px auto;">🔁 再玩一次</button>
+</div>
+
+<div class="record">
+  <p><strong>簡單模式最佳紀錄：</strong><span id="easyHighScores"></span></p>
+  <p><strong>困難模式最佳紀錄：</strong><span id="hardHighScores"></span></p>
+  <p><strong>近期遊戲紀錄：</strong><span id="recentScores"></span></p>
+</div>
+
+
+
+<div style="margin-top: 20px;">
+  <button onclick="toggleSound()" id="soundToggle">🔈 關閉音效</button>
 </div>
 
 <div class="rules">
-    <strong>🎯 遊戲規則：</strong>
-    <ul>
-      <li><strong>簡單模式</strong>：2x2 方格，點選兩個數字加總為 10。</li>
-      <li><strong>困難模式</strong>：3x3 方格，點選兩個數字加總為 15。</li>
-      <li>配對正確得 1 分，錯誤會自動取消選取。</li>
-      <li>每場時間 30 秒，盡量完成最多正確配對！</li>
-      <li>成功會有音效提示，失誤也會有音效提醒。</li>
-    </ul>
-  </div>
+  <strong>🎯 遊戲規則：</strong>
+  <p>簡單模式：2x2 方格，點選兩個數字加總為 10。</p>
+  <p>困難模式：3x3 方格，點選兩個數字加總為 15。</p>
+  <p>配對正確得 1 分，錯誤會自動取消選取。</p>
+  <p>每場時間 30 秒，盡量完成最多正確配對！</p>
+</div>
 
-  <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-  <audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+<audio id="correctSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="wrongSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
-  <script>
-    const grid = document.getElementById("grid");
-    const scoreDisplay = document.getElementById("score");
-    const timerDisplay = document.getElementById("timer");
-    const correctSound = document.getElementById("correctSound");
-    const wrongSound = document.getElementById("wrongSound");
-    const title = document.getElementById("title");
-    const easyHighScoresEl = document.getElementById("easyHighScores");
-    const hardHighScoresEl = document.getElementById("hardHighScores");
-    const recentScoresEl = document.getElementById("recentScores");
+<script>
+let grid = document.getElementById("grid");
+let scoreDisplay = document.getElementById("score");
+let timerDisplay = document.getElementById("timer");
+let easyHighScoresEl = document.getElementById("easyHighScores");
+let hardHighScoresEl = document.getElementById("hardHighScores");
+let recentScoresEl = document.getElementById("recentScores");
+let correctSound = document.getElementById("correctSound");
+correctSound.volume = 0.3;
+let wrongSound = document.getElementById("wrongSound");
+wrongSound.volume = 0.3;
 
-    let score = 0, timeLeft = 30, firstPick = null, secondPick = null, timer;
-    let mode = 'easy';
+let score = 0, timeLeft = 30, timer;
+let firstPick = null, secondPick = null;
+let mode = 'easy';
+let highScores = JSON.parse(localStorage.getItem('highScores')) || { easy: [], hard: [] };
+let recentScores = JSON.parse(localStorage.getItem('recentScores')) || [];
+let soundEnabled = true;
 
-    const highScores = { easy: [], hard: [] };
-    const recentScores = [];
+document.getElementById("easyBtn").onclick = () => startGame('easy');
+document.getElementById("hardBtn").onclick = () => startGame('hard');
 
-    function generateNumbers(count, targetSum) {
-      let nums = [];
-      while (nums.length < count) {
-        nums.push(Math.floor(Math.random() * (targetSum - 1)) + 1);
-      }
-      let i = Math.floor(Math.random() * count);
-      let x = Math.floor(Math.random() * (targetSum - 1)) + 1;
-      let y = targetSum - x;
-      if (y > 0 && y < targetSum) {
-        nums[i] = x;
-        nums[(i + 1) % count] = y;
-      }
-      return nums;
-    }
+document.addEventListener('click', () => {
+  correctSound.muted = false;
+  wrongSound.muted = false;
+}, { once: true });
 
-    function renderGrid() {
-      grid.innerHTML = "";
-      firstPick = null;
-      secondPick = null;
-      let size = mode === 'easy' ? 2 : 3;
-      let totalCells = size * size;
-      grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-      grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundToggle').textContent = soundEnabled ? '🔈 關閉音效' : '🔇 開啟音效';
+}
 
-      const nums = generateNumbers(totalCells, mode === 'easy' ? 10 : 15);
-      nums.forEach(num => {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.textContent = num;
-        cell.addEventListener("click", () => handleCellClick(cell));
-        grid.appendChild(cell);
-      });
-    }
+function generateNumbers(count, targetSum) {
+  const nums = [];
+  let x = Math.floor(Math.random() * (targetSum - 1)) + 1;
+  let y = targetSum - x;
+  nums.push(x, y);
+  while (nums.length < count) {
+    nums.push(Math.floor(Math.random() * (targetSum - 1)) + 1);
+  }
+  for (let i = nums.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [nums[i], nums[j]] = [nums[j], nums[i]];
+  }
+  return nums;
+}
 
-    function handleCellClick(cell) {
-      if (timeLeft <= 0 || cell.classList.contains("selected")) return;
-      cell.classList.add("selected");
+function renderGrid() {
+  grid.innerHTML = "";
+  firstPick = null;
+  secondPick = null;
+  let size = mode === 'easy' ? 2 : 3;
+  let totalCells = size * size;
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  const nums = generateNumbers(totalCells, mode === 'easy' ? 10 : 15);
+  nums.forEach(num => {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.textContent = num;
+    cell.addEventListener("click", () => handleCellClick(cell));
+    grid.appendChild(cell);
+  });
+}
 
-      if (!firstPick) {
-        firstPick = cell;
-      } else {
-        secondPick = cell;
-
-        if (!firstPick || !secondPick) return;
-
-        const num1 = parseInt(firstPick.textContent);
-        const num2 = parseInt(secondPick.textContent);
-
-        if (isNaN(num1) || isNaN(num2)) return;
-
-        const sum = num1 + num2;
-        const target = mode === 'easy' ? 10 : 15;
-
-        if (sum === target) {
-          correctSound.currentTime = 0;
-          correctSound.play();
-          score++;
-          scoreDisplay.textContent = `得分：${score}`;
-          setTimeout(() => {
-            firstPick = null;
-            secondPick = null;
-            renderGrid();
-          }, 200);
-        } else {
-          wrongSound.currentTime = 0;
-          wrongSound.play();
-          setTimeout(() => {
-            if (firstPick) firstPick.classList.remove("selected");
-            if (secondPick) secondPick.classList.remove("selected");
-            firstPick = null;
-            secondPick = null;
-          }, 400);
-        }
-      }
-    }
-
-    function startGame(selectedMode) {
-      mode = selectedMode;
-      title.textContent = mode === 'easy' ? '10來了！簡單模式' : '15來了！困難模式';
-      score = 0;
-      timeLeft = 30;
-      scoreDisplay.textContent = "得分：0";
-      timerDisplay.textContent = "時間：30";
-      renderGrid();
-      clearInterval(timer);
-      timer = setInterval(() => {
-        timeLeft--;
-        timerDisplay.textContent = `時間：${timeLeft}`;
-        if (timeLeft <= 0) {
-          clearInterval(timer);
-          handleGameEnd();
-        }
-      }, 1000);
-    }
-
-    function handleGameEnd() {
-      alert(`時間到！你得了 ${score} 分！`);
-      const record = { mode, score, time: new Date().toLocaleTimeString() };
-
-      highScores[mode].push(score);
-      highScores[mode] = highScores[mode].sort((a,b) => b-a).slice(0,2);
-
-      recentScores.unshift(record);
-      if (recentScores.length > 3) recentScores.pop();
-
-      updateScoreBoard();
-    }
-
-    function updateScoreBoard() {
-      easyHighScoresEl.textContent = highScores['easy'].join(', ');
-      hardHighScoresEl.textContent = highScores['hard'].join(', ');
-      recentScoresEl.textContent = recentScores.map(r => `${r.mode}：${r.score}分 (${r.time})`).join('； ');
-    }
-      let soundOn = true;
-    let bgmOn = true;
-
-    function toggleAudio() {
-      soundOn = !soundOn;
-      document.getElementById('audioToggle').textContent = soundOn ? '🔇 關閉音效' : '🔊 開啟音效';
-    }
-
-    function toggleBGM() {
-  const bgmAudio = document.getElementById('bgmAudio');
-  bgmOn = !bgmOn;
-  if (bgmOn) {
-    bgmAudio.muted = false;
-    bgmAudio.play();
-    document.getElementById('bgmToggle').textContent = '🎵 關閉背景音樂';
+function handleCellClick(cell) {
+  if (timeLeft <= 0 || cell.classList.contains("selected")) return;
+  cell.classList.add("selected");
+  if (!firstPick) {
+    firstPick = cell;
   } else {
-    bgmAudio.pause();
-    document.getElementById('bgmToggle').textContent = '🎶 開啟背景音樂';
+    secondPick = cell;
+    let num1 = parseInt(firstPick.textContent);
+    let num2 = parseInt(secondPick.textContent);
+    let sum = num1 + num2;
+    let target = mode === 'easy' ? 10 : 15;
+    if (sum === target) {
+      if (soundEnabled) {
+        correctSound.currentTime = 0;
+        correctSound.play();
+      }
+      score++;
+      scoreDisplay.textContent = `得分：${score}`;
+      setTimeout(() => {
+        firstPick = null;
+        secondPick = null;
+        renderGrid();
+      }, 200);
+    } else {
+      if (soundEnabled) {
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+      }
+      setTimeout(() => {
+        if (firstPick) firstPick.classList.remove("selected");
+        if (secondPick) secondPick.classList.remove("selected");
+        firstPick = null;
+        secondPick = null;
+      }, 400);
+    }
   }
 }
 
-    correctSound.play = () => { if (soundOn) HTMLAudioElement.prototype.play.call(correctSound); };
-    wrongSound.play = () => { if (soundOn) HTMLAudioElement.prototype.play.call(wrongSound); };
-document.addEventListener('click', () => {
-  const bgm = document.getElementById('bgmAudio');
-  if (bgm && bgm.paused && bgmOn) {
-    bgm.muted = false;
-    bgm.play().catch(() => {});
-  }
-}, { once: true });
+function startGame(selectedMode) {
+  document.getElementById('progressBar').style.width = '100%';
+  mode = selectedMode;
+  score = 0;
+  timeLeft = 30;
+  scoreDisplay.textContent = "得分：0";
+  timerDisplay.textContent = "時間：30";
+  renderGrid();
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('progressBar').style.width = `${(timeLeft / 30) * 100}%`;
+    timerDisplay.textContent = `時間：${timeLeft}`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      handleGameEnd();
+    }
+  }, 1000);
+}
+
+function handleGameEnd() {
+    alert(`時間到！你得了 ${score} 分！`);
+  document.getElementById('restartBtn').style.display = 'inline-block';
+  const record = { mode, score, time: new Date().toLocaleTimeString() };
+  highScores[mode].push(score);
+  highScores[mode] = highScores[mode].sort((a,b) => b-a).slice(0,2);
+  recentScores.unshift(record);
+  if (recentScores.length > 3) recentScores.pop();
+  updateScoreBoard();
+}
+
+function updateScoreBoard() {
+    localStorage.setItem('highScores', JSON.stringify(highScores));
+  localStorage.setItem('recentScores', JSON.stringify(recentScores));
+  easyHighScoresEl.textContent = highScores['easy'].join(', ');
+  hardHighScoresEl.textContent = highScores['hard'].join(', ');
+  recentScoresEl.textContent = recentScores.map(r => `${r.mode}：${r.score}分 (${r.time})`).join('； ');
+}
 </script>
-  <div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
-    設計者：<strong>鍾孟修 Matt－職能治療師</strong><br>
-    👉 <a href="https://www.facebook.com/profile.php?id=100063748491881" target="_blank" style="color: #1b5e20; text-decoration: underline;">按此追蹤設計者 Facebook</a><br>
-    歡迎按讚與分享，給設計者一點小鼓勵！🌿
-  </div>
+
+<div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
+  設計者：<strong>鍾孟修 Matt－職能治療師</strong><br>
+  👉 <a href="https://www.facebook.com/profile.php?id=100063748491881" target="_blank" style="color: #1b5e20; text-decoration: underline;">按此追蹤設計者 Facebook</a><br>
+  歡迎按讚與分享，給設計者一點小鼓勵！🌿
+</div>
+
 </body>
 </html>
