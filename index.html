@@ -80,13 +80,15 @@
     .rules {
       max-width: 400px;
       text-align: left;
-      font-size: 14px;
-      margin-top: 20px;
+      font-size: 15px;
+      margin: 24px auto;
       background: #ffffffcc;
-      padding: 16px;
-      border-radius: 10px;
+      padding: 20px;
+      border-radius: 12px;
       border: 1px solid #c5e1a5;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);}
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      line-height: 1.8;
+    }
     .rules strong {
       color: #33691e;
     }
@@ -106,7 +108,7 @@
 </head>
 <body>
 
-<h1 id="title">數字成雙成對遊戲配對</h1>
+<h1 id="title" style="font-size: clamp(20px, 5vw, 32px); color: #2e7d32; margin-bottom: 10px;">數字成雙成對遊戲配對</h1>
 <div class="info">
   <div style="width: 300px; height: 20px; background: #c8e6c9; border-radius: 10px; overflow: hidden; margin-bottom: 10px;">
     <div id="progressBar" style="height: 100%; width: 100%; background: #388e3c;"></div>
@@ -119,10 +121,11 @@
 <button id="hardBtn">困難模式 (3x3，加總為15)</button>
 
 <div>
-  <button id="restartBtn" onclick="startGame(mode)" style="display:none; margin: 10px auto;">🔁 再玩一次</button>
+  <button id="restartBtn" style="display:none; margin: 10px auto;">🔁 再玩一次</button>
 </div>
 
 <div class="record">
+  <button onclick="clearRecords()" style="margin-bottom: 10px; padding: 6px 12px; font-size: 14px; background-color: #f8bbd0;">🗑 清除所有紀錄</button>
   <p><strong>簡單模式最佳紀錄：</strong><span id="easyHighScores"></span></p>
   <p><strong>困難模式最佳紀錄：</strong><span id="hardHighScores"></span></p>
   <p><strong>近期遊戲紀錄：</strong></p>
@@ -135,18 +138,35 @@
   <button onclick="toggleSound()" id="soundToggle">🔈 關閉音效</button>
 </div>
 
+<div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
+  設計者：<strong>鍾孟修 Matt－職能治療師</strong><br>
+  👉 <a href="https://www.facebook.com/profile.php?id=100063748491881" target="_blank" style="color: #1b5e20; text-decoration: underline;">按此追蹤設計者 Facebook</a><br>
+  歡迎按讚與分享，給設計者一點小鼓勵！🌿
+</div>
+
 <div class="rules">
+  
   <strong>🎯 遊戲規則：</strong>
-  <p>簡單模式：2x2 方格，點選兩個數字加總為 10。</p>
-  <p>困難模式：3x3 方格，點選兩個數字加總為 15。</p>
-  <p>配對正確得 1 分，錯誤會自動取消選取。</p>
-  <p>每場時間 30 秒，盡量完成最多正確配對！</p>
+  <ul style="padding-left: 1em; margin-top: 4px; margin-bottom: 8px;">
+    <li>簡單模式：2x2 方格，點選兩個數字加總為 10。</li>
+      <li>困難模式：3x3 方格，點選兩個數字加總為 15。</li>
+  </ul>
+  <p><strong>✅ 得分規則：</strong></p>
+  <ul style="padding-left: 1em; margin-top: 4px; margin-bottom: 8px;">
+    <li>配對正確得 1 分</li>
+    <li>錯誤會自動取消選取</li>
+  </ul>
+  <p><strong>⏱ 時間限制：</strong></p>
+  <ul style="padding-left: 1em; margin-top: 4px;">
+    <li>每場限時 30 秒，盡量完成最多正確配對！</li>
+  </ul>
 </div>
 
 <audio id="correctSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 <audio id="wrongSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
 <script>
+document.getElementById("restartBtn").onclick = () => startGame(mode);
 let grid = document.getElementById("grid");
 let scoreDisplay = document.getElementById("score");
 let timerDisplay = document.getElementById("timer");
@@ -276,7 +296,7 @@ function handleGameEnd() {
   highScores[mode].push(score);
   highScores[mode] = highScores[mode].sort((a,b) => b-a).slice(0,2);
   recentScores.unshift(record);
-  if (recentScores.length > 3) recentScores.pop();
+  if (recentScores.length > 10) recentScores.pop();
   updateScoreBoard();
 }
 
@@ -288,6 +308,16 @@ function updateScoreBoard() {
   recentScoresEl.innerHTML = recentScores.map(r => `<li>${r.mode}：<strong>${r.score}分</strong>（${r.time}）</li>`).join('');
 }
 updateScoreBoard();
+function clearRecords() {
+  if (confirm('確定要清除所有紀錄嗎？')) {
+    localStorage.removeItem('highScores');
+    localStorage.removeItem('recentScores');
+    highScores = { easy: [], hard: [] };
+    recentScores = [];
+    updateScoreBoard();
+    alert('所有紀錄已清除！');
+  }
+}
 </script>
 
 <div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
