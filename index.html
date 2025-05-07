@@ -142,7 +142,7 @@
   <p>每場時間 30 秒，盡量完成最多正確配對！</p>
 </div>
 
-<audio id="correctSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="correctSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 <audio id="wrongSound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
 <script>
@@ -222,8 +222,9 @@ function handleCellClick(cell) {
     let target = mode === 'easy' ? 10 : 15;
     if (sum === target) {
       if (soundEnabled) {
+        correctSound.pause();
         correctSound.currentTime = 0;
-        correctSound.play();
+        correctSound.play().catch(e => console.warn('播放音效失敗', e));
       }
       score++;
       scoreDisplay.textContent = `得分：${score}`;
@@ -279,8 +280,8 @@ function handleGameEnd() {
 }
 
 function updateScoreBoard() {
-    localStorage.setItem('highScores', JSON.stringify(highScores));
-  localStorage.setItem('recentScores', JSON.stringify(recentScores));
+    try { localStorage.setItem('highScores', JSON.stringify(highScores)); } catch(e) { console.warn('無法儲存 highScores', e); }
+  try { localStorage.setItem('recentScores', JSON.stringify(recentScores)); } catch(e) { console.warn('無法儲存 recentScores', e); }
   easyHighScoresEl.textContent = highScores['easy'].join(', ');
   hardHighScoresEl.textContent = highScores['hard'].join(', ');
   recentScoresEl.textContent = recentScores.map(r => `${r.mode}：${r.score}分 (${r.time})`).join('； ');
