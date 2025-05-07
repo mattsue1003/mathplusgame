@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>數字挑戰遊戲</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+      margin: 0;
+      background: linear-gradient(to bottom, #a8e6cf, #dcedc1);
+    }
+    h1 {
+      color: #2e7d32;
+      margin-bottom: 10px;
+    }
+    .info {
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #33691e;
+    }
+    #grid {
+      display: grid;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    .cell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fff;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 12px;
+      border: 2px solid #66bb6a;
+      width: 80px;
+      height: 80px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.2s;
+    }
+    .cell.selected {
+      background-color: #aed581;
+    }
+    #score, #timer {
+      font-size: 18px;
+      margin: 5px;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #81c784;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #66bb6a;
+    }
+    .record {
+      margin-top: 10px;
+      text-align: center;
+      color: #2e7d32;
+    }
+    .record p {
+      margin: 6px 0;
+    }
+    .rules {
+      max-width: 400px;
+      text-align: left;
+      font-size: 14px;
+      margin-top: 20px;
+      background: #ffffffcc;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #c5e1a5;
+    }
+    .rules strong {
+      color: #33691e;
+    }
+    @media screen and (max-width: 480px) {
+      .cell {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+      }
+      button {
+        padding: 8px 14px;
+        font-size: 14px;
+      }
+    }
+  </style>
+<link rel="preconnect" href="https://www.youtube.com">
+</head>
+<body>
+  <audio id="bgmAudio" src="https://cdn.pixabay.com/download/audio/2023/04/06/audio_c8964d1b98.mp3?filename=calm-nature-background-ambience-146406.mp3" autoplay loop muted></audio></audio></audio>
+  
+  <h1 id="title">數字挑戰遊戲</h1>
+  <div class="info">
+    <span id="score">得分：0</span>
+    <span id="timer">時間：30</span>
+  </div>
+  <div id="grid"></div>
+  <button onclick="startGame('easy')">簡單模式 (2x2，加總為10)</button>
+  <button onclick="startGame('hard')">困難模式 (3x3，加總為15)</button>
+
+  <div class="record">
+    <p><strong>簡單模式最佳紀錄：</strong><span id="easyHighScores"></span></p>
+    <p><strong>困難模式最佳紀錄：</strong><span id="hardHighScores"></span></p>
+    <p><strong>近期遊戲紀錄：</strong><span id="recentScores"></span></p>
+  </div>
+
+  <div style="margin-top: 10px;">
+  <button onclick="toggleAudio()" id="audioToggle">🔇 關閉音效</button>
+  <button onclick="toggleBGM()" id="bgmToggle">🎵 關閉背景音樂</button>
+</div>
+
+<div class="rules">
+    <strong>🎯 遊戲規則：</strong>
+    <ul>
+      <li><strong>簡單模式</strong>：2x2 方格，點選兩個數字加總為 10。</li>
+      <li><strong>困難模式</strong>：3x3 方格，點選兩個數字加總為 15。</li>
+      <li>配對正確得 1 分，錯誤會自動取消選取。</li>
+      <li>每場時間 30 秒，盡量完成最多正確配對！</li>
+      <li>成功會有音效提示，失誤也會有音效提醒。</li>
+    </ul>
+  </div>
+
+  <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  <audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const scoreDisplay = document.getElementById("score");
+    const timerDisplay = document.getElementById("timer");
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const title = document.getElementById("title");
+    const easyHighScoresEl = document.getElementById("easyHighScores");
+    const hardHighScoresEl = document.getElementById("hardHighScores");
+    const recentScoresEl = document.getElementById("recentScores");
+
+    let score = 0, timeLeft = 30, firstPick = null, secondPick = null, timer;
+    let mode = 'easy';
+
+    const highScores = { easy: [], hard: [] };
+    const recentScores = [];
+
+    function generateNumbers(count, targetSum) {
+      let nums = [];
+      while (nums.length < count) {
+        nums.push(Math.floor(Math.random() * (targetSum - 1)) + 1);
+      }
+      let i = Math.floor(Math.random() * count);
+      let x = Math.floor(Math.random() * (targetSum - 1)) + 1;
+      let y = targetSum - x;
+      if (y > 0 && y < targetSum) {
+        nums[i] = x;
+        nums[(i + 1) % count] = y;
+      }
+      return nums;
+    }
+
+    function renderGrid() {
+      grid.innerHTML = "";
+      firstPick = null;
+      secondPick = null;
+      let size = mode === 'easy' ? 2 : 3;
+      let totalCells = size * size;
+      grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+      grid.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+
+      const nums = generateNumbers(totalCells, mode === 'easy' ? 10 : 15);
+      nums.forEach(num => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = num;
+        cell.addEventListener("click", () => handleCellClick(cell));
+        grid.appendChild(cell);
+      });
+    }
+
+    function handleCellClick(cell) {
+      if (timeLeft <= 0 || cell.classList.contains("selected")) return;
+      cell.classList.add("selected");
+
+      if (!firstPick) {
+        firstPick = cell;
+      } else {
+        secondPick = cell;
+
+        if (!firstPick || !secondPick) return;
+
+        const num1 = parseInt(firstPick.textContent);
+        const num2 = parseInt(secondPick.textContent);
+
+        if (isNaN(num1) || isNaN(num2)) return;
+
+        const sum = num1 + num2;
+        const target = mode === 'easy' ? 10 : 15;
+
+        if (sum === target) {
+          correctSound.currentTime = 0;
+          correctSound.play();
+          score++;
+          scoreDisplay.textContent = `得分：${score}`;
+          setTimeout(() => {
+            firstPick = null;
+            secondPick = null;
+            renderGrid();
+          }, 200);
+        } else {
+          wrongSound.currentTime = 0;
+          wrongSound.play();
+          setTimeout(() => {
+            if (firstPick) firstPick.classList.remove("selected");
+            if (secondPick) secondPick.classList.remove("selected");
+            firstPick = null;
+            secondPick = null;
+          }, 400);
+        }
+      }
+    }
+
+    function startGame(selectedMode) {
+      mode = selectedMode;
+      title.textContent = mode === 'easy' ? '10來了！簡單模式' : '15來了！困難模式';
+      score = 0;
+      timeLeft = 30;
+      scoreDisplay.textContent = "得分：0";
+      timerDisplay.textContent = "時間：30";
+      renderGrid();
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `時間：${timeLeft}`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          handleGameEnd();
+        }
+      }, 1000);
+    }
+
+    function handleGameEnd() {
+      alert(`時間到！你得了 ${score} 分！`);
+      const record = { mode, score, time: new Date().toLocaleTimeString() };
+
+      highScores[mode].push(score);
+      highScores[mode] = highScores[mode].sort((a,b) => b-a).slice(0,2);
+
+      recentScores.unshift(record);
+      if (recentScores.length > 3) recentScores.pop();
+
+      updateScoreBoard();
+    }
+
+    function updateScoreBoard() {
+      easyHighScoresEl.textContent = highScores['easy'].join(', ');
+      hardHighScoresEl.textContent = highScores['hard'].join(', ');
+      recentScoresEl.textContent = recentScores.map(r => `${r.mode}：${r.score}分 (${r.time})`).join('； ');
+    }
+      let soundOn = true;
+    let bgmOn = true;
+
+    function toggleAudio() {
+      soundOn = !soundOn;
+      document.getElementById('audioToggle').textContent = soundOn ? '🔇 關閉音效' : '🔊 開啟音效';
+    }
+
+    function toggleBGM() {
+  const bgmAudio = document.getElementById('bgmAudio');
+  bgmOn = !bgmOn;
+  if (bgmOn) {
+    bgmAudio.muted = false;
+    bgmAudio.play();
+    document.getElementById('bgmToggle').textContent = '🎵 關閉背景音樂';
+  } else {
+    bgmAudio.pause();
+    document.getElementById('bgmToggle').textContent = '🎶 開啟背景音樂';
+  }
+}
+
+    correctSound.play = () => { if (soundOn) HTMLAudioElement.prototype.play.call(correctSound); };
+    wrongSound.play = () => { if (soundOn) HTMLAudioElement.prototype.play.call(wrongSound); };
+document.addEventListener('click', () => {
+  const bgm = document.getElementById('bgmAudio');
+  if (bgm && bgm.paused && bgmOn) {
+    bgm.muted = false;
+    bgm.play().catch(() => {});
+  }
+}, { once: true });
+</script>
+  <div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
+    設計者：<strong>鍾孟修 Matt－職能治療師</strong><br>
+    👉 <a href="https://www.facebook.com/profile.php?id=100063748491881" target="_blank" style="color: #1b5e20; text-decoration: underline;">按此追蹤設計者 Facebook</a><br>
+    歡迎按讚與分享，給設計者一點小鼓勵！🌿
+  </div>
+</body>
+</html>
