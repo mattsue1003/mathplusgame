@@ -125,7 +125,8 @@
 <div class="record">
   <p><strong>簡單模式最佳紀錄：</strong><span id="easyHighScores"></span></p>
   <p><strong>困難模式最佳紀錄：</strong><span id="hardHighScores"></span></p>
-  <p><strong>近期遊戲紀錄：</strong><span id="recentScores"></span></p>
+  <p><strong>近期遊戲紀錄：</strong></p>
+<ul id="recentScores" style="list-style: none; padding-left: 0; margin: 0 auto; line-height: 1.6; max-width: 300px; text-align: left;"></ul>
 </div>
 
 
@@ -284,8 +285,9 @@ function updateScoreBoard() {
   try { localStorage.setItem('recentScores', JSON.stringify(recentScores)); } catch(e) { console.warn('無法儲存 recentScores', e); }
   easyHighScoresEl.textContent = highScores['easy'].join(', ');
   hardHighScoresEl.textContent = highScores['hard'].join(', ');
-  recentScoresEl.textContent = recentScores.map(r => `${r.mode}：${r.score}分 (${r.time})`).join('； ');
+  recentScoresEl.innerHTML = recentScores.map(r => `<li>${r.mode}：<strong>${r.score}分</strong>（${r.time}）</li>`).join('');
 }
+updateScoreBoard();
 </script>
 
 <div style="margin-top: 30px; font-size: 14px; color: #33691e; text-align: center;">
